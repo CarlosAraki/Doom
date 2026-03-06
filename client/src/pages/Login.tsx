@@ -1,17 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock, Gamepad2 } from "lucide-react";
 import { useLocation } from "wouter";
-
-/**
- * Design Philosophy: Glassmorphism with Dynamic Gradient Background
- * - Frosted glass effect on login form with backdrop blur
- * - Dark gradient background (blue to purple to pink)
- * - Smooth animations and transitions
- * - Premium, modern aesthetic with depth and transparency
- */
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,21 +13,30 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
+  const { login, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/game");
+    }
+  }, [isAuthenticated, setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login process
-    setTimeout(() => {
+    try {
+      await login(email, password);
+      toast.success(`Bem-vindo, ${email}!`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao fazer login");
+    } finally {
       setIsLoading(false);
-      alert(`Login com: ${email}`);
-    }, 1500);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated gradient background */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -43,21 +46,17 @@ export default function Login() {
         }}
       />
 
-      {/* Decorative elements */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
       <div className="absolute -bottom-8 right-10 w-72 h-72 bg-gray-700 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
       <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
 
-      {/* Main container */}
       <div className="relative z-10 w-full max-w-md">
-        {/* Glassmorphism card */}
         <div
           className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl fade-in-up"
           style={{
             boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
           }}
         >
-          {/* Header with icon */}
           <div className="flex flex-col items-center mb-8">
             <div className="mb-4 p-4 bg-gradient-to-br from-gray-500 to-gray-700 rounded-2xl shadow-lg">
               <Lock className="w-8 h-8 text-white" />
@@ -73,9 +72,7 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-200 font-medium">
                 Email
@@ -91,7 +88,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Password field */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-200 font-medium">
                 Senha
@@ -120,7 +116,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Remember me and forgot password */}
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center space-x-2 cursor-pointer group">
                 <input
@@ -139,7 +134,6 @@ export default function Login() {
               </a>
             </div>
 
-            {/* Submit button */}
             <Button
               type="submit"
               disabled={isLoading}
@@ -156,7 +150,6 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/20" />
@@ -166,7 +159,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Social login buttons */}
           <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
@@ -184,7 +176,6 @@ export default function Login() {
             </Button>
           </div>
 
-          {/* Sign up link */}
           <p className="text-center text-gray-300 text-sm mt-6">
             Não tem uma conta?{" "}
             <a
@@ -194,21 +185,8 @@ export default function Login() {
               Cadastre-se
             </a>
           </p>
-
-          {/* Game button */}
-          <div className="mt-8 pt-6 border-t border-white/20">
-            <Button
-              type="button"
-              onClick={() => setLocation("/game")}
-              className="w-full bg-gray-700/60 hover:bg-gray-600/60 text-gray-100 font-semibold py-2.5 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
-            >
-              <Gamepad2 className="w-5 h-5" />
-              <span>Jogar Doom Clone</span>
-            </Button>
-          </div>
         </div>
 
-        {/* Illustration - shown on larger screens */}
         <div className="hidden lg:flex justify-center mt-8 opacity-80">
           <img
             src="https://d2xsxph8kpxj0f.cloudfront.net/310519663185495106/CSegGTqXw5sLXf3QBNQyjF/login-illustration-RRmLs7EkU47uqxRKeQPrG4.webp"
@@ -218,18 +196,11 @@ export default function Login() {
         </div>
       </div>
 
-      {/* CSS for gradient animation */}
       <style>{`
         @keyframes gradient {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
       `}</style>
     </div>

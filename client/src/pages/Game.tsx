@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Design Philosophy: Glassmorphism with Dark Gray Palette
@@ -13,6 +14,12 @@ import { ArrowLeft } from "lucide-react";
 export default function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [, setLocation] = useLocation();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    setLocation("/");
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,8 +73,8 @@ export default function Game() {
         style={{ display: "block" }}
       />
 
-      {/* Back Button Overlay */}
-      <div className="absolute top-4 left-4 z-50">
+      {/* Controls Overlay */}
+      <div className="absolute top-4 left-4 z-50 flex gap-2">
         <Button
           onClick={() => setLocation("/")}
           variant="outline"
@@ -75,6 +82,14 @@ export default function Game() {
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar
+        </Button>
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          className="bg-gray-900/80 border-gray-700 text-gray-200 hover:bg-red-900/80 hover:text-white backdrop-blur-sm"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair
         </Button>
       </div>
 
