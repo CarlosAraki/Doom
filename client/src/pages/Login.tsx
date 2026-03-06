@@ -35,16 +35,16 @@ export default function Login() {
       <div
         className="absolute inset-0 z-0"
         style={{
-          background: "linear-gradient(-45deg, #1e3a8a, #7c3aed, #ec4899, #1e3a8a)",
+          background: "linear-gradient(-45deg, #1f2937, #374151, #4b5563, #1f2937)",
           backgroundSize: "400% 400%",
           animation: "gradient 15s ease infinite",
         }}
       />
 
       {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse z-0" />
-      <div className="absolute -bottom-8 right-10 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse z-0" />
-      <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse z-0" />
+      <div className="absolute top-20 left-10 w-72 h-72 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
+      <div className="absolute -bottom-8 right-10 w-72 h-72 bg-gray-700 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
+      <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
 
       {/* Main container */}
       <div className="relative z-10 w-full max-w-md">
@@ -57,7 +57,7 @@ export default function Login() {
         >
           {/* Header with icon */}
           <div className="flex flex-col items-center mb-8">
-            <div className="mb-4 p-4 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl shadow-lg">
+            <div className="mb-4 p-4 bg-gradient-to-br from-gray-500 to-gray-700 rounded-2xl shadow-lg">
               <Lock className="w-8 h-8 text-white" />
             </div>
             <h1
@@ -141,7 +141,7 @@ export default function Login() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center space-x-2">
