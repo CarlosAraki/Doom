@@ -12,8 +12,9 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [, setLocation] = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { login, register, isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -21,7 +22,7 @@ export default function Login() {
     }
   }, [isAuthenticated, setLocation]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -34,6 +35,28 @@ export default function Login() {
       setIsLoading(false);
     }
   };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      await register(email, password);
+      toast.success(`Conta criada com sucesso! Bem-vindo, ${email}!`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao registrar");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+        <div className="text-white">Carregando...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -65,14 +88,14 @@ export default function Login() {
               className="text-3xl font-bold text-white text-center"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              Bem-vindo
+              {isRegistering ? "Criar Conta" : "Bem-vindo"}
             </h1>
             <p className="text-gray-300 text-center mt-2 text-sm">
-              Acesse sua conta de forma segura
+              {isRegistering ? "Crie sua conta para acessar o jogo" : "Acesse sua conta de forma segura"}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-200 font-medium">
                 Email
@@ -116,23 +139,25 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center space-x-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-white/20 bg-white/10 accent-blue-500 cursor-pointer"
-                />
-                <span className="text-gray-300 group-hover:text-gray-200 transition-colors">
-                  Lembrar-me
-                </span>
-              </label>
-              <a
-                href="#"
-                className="text-blue-300 hover:text-blue-200 transition-colors font-medium"
-              >
-                Esqueceu a senha?
-              </a>
-            </div>
+            {!isRegistering && (
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center space-x-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-white/20 bg-white/10 accent-blue-500 cursor-pointer"
+                  />
+                  <span className="text-gray-300 group-hover:text-gray-200 transition-colors">
+                    Lembrar-me
+                  </span>
+                </label>
+                <a
+                  href="#"
+                  className="text-blue-300 hover:text-blue-200 transition-colors font-medium"
+                >
+                  Esqueceu a senha?
+                </a>
+              </div>
+            )}
 
             <Button
               type="submit"
@@ -142,10 +167,10 @@ export default function Login() {
               {isLoading ? (
                 <span className="flex items-center justify-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Entrando...</span>
+                  <span>{isRegistering ? "Criando conta..." : "Entrando..."}</span>
                 </span>
               ) : (
-                "Entrar"
+                isRegistering ? "Criar Conta" : "Entrar"
               )}
             </Button>
           </form>
@@ -177,13 +202,27 @@ export default function Login() {
           </div>
 
           <p className="text-center text-gray-300 text-sm mt-6">
-            Não tem uma conta?{" "}
-            <a
-              href="#"
-              className="text-blue-300 hover:text-blue-200 font-semibold transition-colors"
-            >
-              Cadastre-se
-            </a>
+            {isRegistering ? (
+              <>
+                Já tem uma conta?{" "}
+                <button
+                  onClick={() => setIsRegistering(false)}
+                  className="text-blue-300 hover:text-blue-200 font-semibold transition-colors"
+                >
+                  Faça login
+                </button>
+              </>
+            ) : (
+              <>
+                Não tem uma conta?{" "}
+                <button
+                  onClick={() => setIsRegistering(true)}
+                  className="text-blue-300 hover:text-blue-200 font-semibold transition-colors"
+                >
+                  Cadastre-se
+                </button>
+              </>
+            )}
           </p>
         </div>
 

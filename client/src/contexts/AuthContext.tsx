@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: { email: string } | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  register: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -12,43 +15,66 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Queries e mutations do tRPC
+  const meQuery = trpc.auth.me.useQuery();
+  const loginMutation = trpc.auth.login.useMutation();
+  const registerMutation = trpc.auth.register.useMutation();
+  const logoutMutation = trpc.auth.logout.useMutation();
 
   // Verificar autenticação ao carregar
   useEffect(() => {
-    const storedAuth = localStorage.getItem("auth");
-    const storedUser = localStorage.getItem("user");
-    if (storedAuth === "true" && storedUser) {
+    if (meQuery.data) {
       setIsAuthenticated(true);
-      setUser(JSON.parse(storedUser));
+      setUser({ email: meQuery.data?.email || "user" });
+    } else {
+      setIsAuthenticated(false);
+      setUser(null);
     }
-  }, []);
+    setIsLoading(false);
+  }, [meQuery.data]);
 
   const login = async (email: string, password: string) => {
-    // Validação simples
     if (!email || !password) {
       throw new Error("Email e senha são obrigatórios");
     }
 
-    // Simular delay de autenticação
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Armazenar autenticação
-    localStorage.setItem("auth", "true");
-    localStorage.setItem("user", JSON.stringify({ email }));
-
-    setIsAuthenticated(true);
-    setUser({ email });
+    try {
+      const result = await loginMutation.mutateAsync({ email, password });
+      setIsAuthenticated(true);
+      setUser({ email: result.email });
+    } catch (error) {
+      throw error;
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem("auth");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUser(null);
+  const register = async (email: string, password: string) => {
+    if (!email || !password) {
+      throw new Error("Email e senha são obrigatórios");
+    }
+
+    try {
+      const result = await registerMutation.mutateAsync({ email, password });
+      setIsAuthenticated(true);
+      setUser({ email: result.email });
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      throw error;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

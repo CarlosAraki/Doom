@@ -9,8 +9,8 @@ import Login from "./pages/Login";
 import Game from "./pages/Game";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Login} />
