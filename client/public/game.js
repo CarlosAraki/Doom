@@ -158,17 +158,6 @@ function checkPhaseCompletion() {
   }
 }
 
-document.addEventListener("keydown", e => {
-  keys[e.key.toLowerCase()] = true
-  if (e.key === "Escape") {
-    if (gameState === "playing") {
-      gameState = "paused"
-      pausedMenuIndex = 0
-    } else if (gameState === "paused") {
-      gameState = "playing"
-    }
-  }
-})
 document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false)
 
 canvas.addEventListener("click", () => canvas.requestPointerLock())
@@ -487,7 +476,7 @@ function drawSettingsMenu() {
   ctx.textAlign = "center"
   ctx.fillText("Press ESC to go back", WIDTH / 2, HEIGHT - 50)
   ctx.textAlign = "left"
-
+}
 
 function castRays() {
   for (let i = 0; i < RAYS; i++) {
@@ -567,6 +556,8 @@ function gameLoop() {
 }
 
 document.addEventListener("keydown", (e) => {
+  keys[e.key.toLowerCase()] = true
+  
   if (gameState === "menu") {
     if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
       mainMenuIndex = (mainMenuIndex - 1 + 3) % 3

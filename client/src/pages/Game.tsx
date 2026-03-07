@@ -72,7 +72,7 @@ export default function Game() {
     <div className="relative w-full h-screen bg-black overflow-hidden">
       <canvas
         ref={canvasRef}
-        id="game"
+        id="gameCanvas"
         className="block w-full h-full"
         style={{ display: "block" }}
       />
