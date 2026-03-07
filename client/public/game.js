@@ -1,4 +1,4 @@
-const canvas = document.getElementById("game")
+const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
 
 canvas.width = window.innerWidth
@@ -23,6 +23,8 @@ let gunRecoil = 0
 let score = 0
 let gameStartTime = 0
 let gameDuration = 0
+let currentPhase = 1
+let phaseEnemiesKilled = 0
 
 // Configurações do jogo
 let gameSettings = {
@@ -32,10 +34,10 @@ let gameSettings = {
 }
 
 // Estado do jogo
-let gameState = "menu" // menu, gameMode, playing, gameover, paused, settings, difficulty
+let gameState = "menu"
 let username = ""
 let selectedGameMode = "singleplayer"
-let selectedDifficulty = "normal" // easy, normal, hard, nightmare
+let selectedDifficulty = "normal"
 let gameModeMenuIndex = 0
 let difficultyMenuIndex = 0
 window.scoreSubmitted = false
@@ -54,26 +56,55 @@ let currentDifficultySettings = difficultySettings.normal
 const enemySprite = new Image()
 enemySprite.src = "mike.jpg"
 
-let map = [
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,1],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1],
-[1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,1,1,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-[1,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-]
+// Gerar mapa 3x maior (84x54)
+function generateMap() {
+  const width = 84
+  const height = 54
+  const map = []
+  
+  for (let y = 0; y < height; y++) {
+    const row = []
+    for (let x = 0; x < width; x++) {
+      if (x === 0 || x === width - 1 || y === 0 || y === height - 1) {
+        row.push(1)
+      } else {
+        row.push(0)
+      }
+    }
+    map.push(row)
+  }
+  
+  for (let y = 5; y < height - 5; y += 8) {
+    for (let x = 5; x < width - 5; x += 10) {
+      const roomSize = Math.random() > 0.5 ? 3 : 4
+      const roomType = Math.floor(Math.random() * 3)
+      
+      if (roomType === 0) {
+        for (let ry = 0; ry < roomSize; ry++) {
+          for (let rx = 0; rx < roomSize; rx++) {
+            if (y + ry < height - 1 && x + rx < width - 1) {
+              map[y + ry][x + rx] = 1
+            }
+          }
+        }
+      } else if (roomType === 1) {
+        for (let i = 0; i < roomSize + 2; i++) {
+          if (y + i < height - 1) map[y + i][x] = 1
+          if (x + i < width - 1) map[y][x + i] = 1
+        }
+      } else {
+        for (let i = 0; i < roomSize; i++) {
+          if (y + i < height - 1) map[y + i][x] = 1
+          if (x + i < width - 1) map[y][x + i] = 1
+        }
+      }
+    }
+  }
+  
+  return map
+}
+
+let map = generateMap()
 
 const player = {
   x: 3,
@@ -81,7 +112,49 @@ const player = {
   angle: 0
 }
 
-const keys = {}
+let enemies = []
+let keys = {}
+
+function spawnEnemies() {
+  enemies = []
+  const enemiesForPhase = 2 + (currentPhase * 2)
+  
+  for (let i = 0; i < enemiesForPhase; i++) {
+    let x, y, valid
+    do {
+      valid = true
+      x = Math.random() * (map[0].length - 4) + 2
+      y = Math.random() * (map.length - 4) + 2
+      if (isWall(x, y) || (Math.abs(x - player.x) < 5 && Math.abs(y - player.y) < 5)) {
+        valid = false
+      }
+    } while (!valid)
+    
+    enemies.push({
+      x: x,
+      y: y,
+      alive: true,
+      attackCooldown: 0,
+      hasAttacked: false
+    })
+  }
+}
+
+function getPhaseColor() {
+  const redIntensity = Math.min(255, 100 + (currentPhase * 30))
+  const greenIntensity = Math.max(0, 150 - (currentPhase * 20))
+  const blueIntensity = Math.max(0, 150 - (currentPhase * 20))
+  
+  return `rgb(${redIntensity},${greenIntensity},${blueIntensity})`
+}
+
+function checkPhaseCompletion() {
+  if (phaseEnemiesKilled >= 2 + (currentPhase * 2)) {
+    currentPhase++
+    phaseEnemiesKilled = 0
+    spawnEnemies()
+  }
+}
 
 document.addEventListener("keydown", e => {
   keys[e.key.toLowerCase()] = true
@@ -108,66 +181,33 @@ function isWall(x, y) {
   let row = Math.floor(y)
   let col = Math.floor(x)
   if (row < 0 || row >= map.length || col < 0 || col >= map[0].length) return true
-  return map[row][col] !== 0
+  return map[row][col] === 1
 }
 
 function movePlayer() {
-  let nx = player.x
-  let ny = player.y
-
-  if (keys["w"]) {
-    nx += Math.cos(player.angle) * PLAYER_SPEED
-    ny += Math.sin(player.angle) * PLAYER_SPEED
+  let newX = player.x
+  let newY = player.y
+  
+  if (keys["w"] || keys["arrowup"]) {
+    newX += Math.cos(player.angle) * PLAYER_SPEED
+    newY += Math.sin(player.angle) * PLAYER_SPEED
   }
-  if (keys["s"]) {
-    nx -= Math.cos(player.angle) * PLAYER_SPEED
-    ny -= Math.sin(player.angle) * PLAYER_SPEED
+  if (keys["s"] || keys["arrowdown"]) {
+    newX -= Math.cos(player.angle) * PLAYER_SPEED
+    newY -= Math.sin(player.angle) * PLAYER_SPEED
   }
-  if (keys["a"]) {
-    nx += Math.cos(player.angle - Math.PI / 2) * PLAYER_SPEED
-    ny += Math.sin(player.angle - Math.PI / 2) * PLAYER_SPEED
+  if (keys["a"] || keys["arrowleft"]) {
+    newX += Math.cos(player.angle - Math.PI / 2) * PLAYER_SPEED
+    newY += Math.sin(player.angle - Math.PI / 2) * PLAYER_SPEED
   }
-  if (keys["d"]) {
-    nx += Math.cos(player.angle + Math.PI / 2) * PLAYER_SPEED
-    ny += Math.sin(player.angle + Math.PI / 2) * PLAYER_SPEED
+  if (keys["d"] || keys["arrowright"]) {
+    newX += Math.cos(player.angle + Math.PI / 2) * PLAYER_SPEED
+    newY += Math.sin(player.angle + Math.PI / 2) * PLAYER_SPEED
   }
-
-  if (!isWall(nx, player.y)) player.x = nx
-  if (!isWall(player.x, ny)) player.y = ny
+  
+  if (!isWall(newX, player.y)) player.x = newX
+  if (!isWall(player.x, newY)) player.y = newY
 }
-
-let enemies = []
-
-function newRoom() {
-  enemies = []
-  enemiesKilled = 0
-  maxEnemiesPerRoom += 2
-}
-
-function spawnEnemy() {
-  if (gameState !== "playing") return
-  if (gameOver) return
-
-  let aliveCount = enemies.filter(e => e.alive).length
-  if (aliveCount >= maxEnemiesPerRoom) return
-
-  let x, y, valid = false
-  while (!valid) {
-    x = 1 + Math.random() * (map[0].length - 2)
-    y = 1 + Math.random() * (map.length - 2)
-    if (!isWall(x, y)) valid = true
-  }
-
-  enemies.push({
-    x: x,
-    y: y,
-    alive: true,
-    hasAttacked: false,
-    attackCooldown: 0
-  })
-}
-
-setInterval(spawnEnemy, 2000)
 
 function updateEnemies() {
   enemies.forEach(e => {
@@ -199,95 +239,8 @@ function updateEnemies() {
   })
 }
 
-function drawEnemies() {
-  enemies.forEach(e => {
-    if (!e.alive) return
-
-    let dx = e.x - player.x
-    let dy = e.y - player.y
-    let dist = Math.sqrt(dx * dx + dy * dy)
-    let angle = Math.atan2(dy, dx) - player.angle
-
-    while (angle > Math.PI) angle -= Math.PI * 2
-    while (angle < -Math.PI) angle += Math.PI * 2
-
-    if (Math.abs(angle) < FOV / 2) {
-      let size = HEIGHT / dist
-      let screenX = (angle + FOV / 2) / FOV * WIDTH
-
-      ctx.drawImage(enemySprite, screenX - size / 1.8, HEIGHT / 1.8 - size / 1.8, size, size)
-    }
-  })
-}
-
-let ammoItems = []
-
-function spawnAmmo() {
-  let x = 1 + Math.random() * 7
-  let y = 1 + Math.random() * 7
-  if (!isWall(x, y)) ammoItems.push({ x, y })
-}
-
-setInterval(spawnAmmo, 6000)
-
-function drawAmmo() {
-  ctx.fillStyle = "yellow"
-  ammoItems.forEach((item, i) => {
-    let dx = item.x - player.x
-    let dy = item.y - player.y
-    let dist = Math.sqrt(dx * dx + dy * dy)
-
-    if (dist < 0.5) {
-      ammo += 10
-      ammoItems.splice(i, 1)
-      return
-    }
-
-    let angle = Math.atan2(dy, dx) - player.angle
-    if (Math.abs(angle) < FOV / 2) {
-      let size = HEIGHT / dist
-      let screenX = (angle + FOV / 2) / FOV * WIDTH
-      ctx.fillRect(screenX - size / 2, HEIGHT / 2 - size / 2, size, size)
-    }
-  })
-}
-
-canvas.addEventListener("mousedown", shoot)
-
-function shoot() {
-  if (gameOver) return
-  if (ammo <= 0) return
-  ammo--
-  gunRecoil = 8
-
-  let shotEnemy = false
-  enemies.forEach(e => {
-    if (!e.alive) return
-
-    let dx = e.x - player.x
-    let dy = e.y - player.y
-    let angle = Math.atan2(dy, dx) - player.angle
-
-    while (angle > Math.PI) angle -= Math.PI * 2
-    while (angle < -Math.PI) angle += Math.PI * 2
-
-    if (Math.abs(angle) < 0.1 && !shotEnemy) {
-      e.alive = false
-      shotEnemy = true
-      enemiesKilled++
-
-      if (enemiesKilled >= maxEnemiesPerRoom) {
-        setTimeout(() => newRoom(), 500)
-      }
-    }
-  })
-}
-
 function drawGun() {
-  if (gunRecoil > 0) gunRecoil--
-  ctx.fillStyle = "gray"
-  ctx.fillRect(WIDTH / 2 - 50, HEIGHT - 120 + gunRecoil, 100, 100)
-  ctx.fillStyle = "black"
+  ctx.fillStyle = "brown"
   ctx.fillRect(WIDTH / 2 - 10, HEIGHT - 150 + gunRecoil, 20, 40)
 }
 
@@ -297,9 +250,9 @@ function drawHUD() {
   ctx.fillText("Ammo: " + ammo, 20, 30)
   ctx.fillText("Lives: " + lives, 20, 60)
   ctx.fillText("Difficulty: " + currentDifficultySettings.name, 20, 90)
+  ctx.fillText("Phase: " + currentPhase, 20, 120)
   ctx.fillText("+", WIDTH / 2 - 5, HEIGHT / 2 + 5)
   
-  // Score display
   ctx.font = "24px monospace"
   ctx.fillStyle = "yellow"
   ctx.textAlign = "right"
@@ -322,10 +275,10 @@ function drawGameOver() {
   ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2)
   ctx.font = "30px sans-serif"
   ctx.fillText("Score: " + score, WIDTH / 2, HEIGHT / 2 + 50)
-  ctx.fillText("Pressione ESC para voltar", WIDTH / 2, HEIGHT / 2 + 100)
+  ctx.fillText("Phase: " + currentPhase, WIDTH / 2, HEIGHT / 2 + 100)
+  ctx.fillText("Pressione ESC para voltar", WIDTH / 2, HEIGHT / 2 + 150)
   ctx.textAlign = "left"
   
-  // Salvar score no banco de dados
   if (!window.scoreSubmitted) {
     window.scoreSubmitted = true
     saveScore()
@@ -344,7 +297,8 @@ async function saveScore() {
           score: score,
           gameMode: selectedGameMode,
           enemiesKilled: enemiesKilled,
-          timePlayedSeconds: Math.floor(gameDuration / 1000)
+          timePlayedSeconds: Math.floor(gameDuration / 1000),
+          phase: currentPhase
         }
       }),
       credentials: 'include'
@@ -356,14 +310,15 @@ async function saveScore() {
 }
 
 function drawBackground() {
-  ctx.fillStyle = "#333"
+  const phaseColor = getPhaseColor()
+  ctx.fillStyle = phaseColor
   ctx.fillRect(0, 0, WIDTH, HEIGHT / 2)
-  ctx.fillStyle = "#111"
+  ctx.fillStyle = "rgba(0,0,0,0.3)"
   ctx.fillRect(0, HEIGHT / 2, WIDTH, HEIGHT / 2)
 }
 
 function drawMiniMap() {
-  let scale = 10
+  let scale = 3
   let mapWidth = map[0].length * scale
   let mapHeight = map.length * scale
   let mapX = WIDTH - mapWidth - 10
@@ -377,31 +332,55 @@ function drawMiniMap() {
     }
   }
 
-  ctx.fillStyle = "green"
-  ctx.fillRect(mapX + player.x * scale, mapY + player.y * scale, scale, scale)
+  ctx.fillStyle = "yellow"
+  ctx.fillRect(mapX + player.x * scale - 2, mapY + player.y * scale - 2, 4, 4)
 
   enemies.forEach(e => {
     if (e.alive) {
       ctx.fillStyle = "red"
-      ctx.fillRect(mapX + e.x * scale, mapY + e.y * scale, scale, scale)
+      ctx.fillRect(mapX + e.x * scale - 2, mapY + e.y * scale - 2, 4, 4)
     }
   })
 }
 
-// Menu de Pausa
+function drawEnemies() {
+  enemies.forEach(e => {
+    if (!e.alive) return
+    let dx = e.x - player.x
+    let dy = e.y - player.y
+    let dist = Math.sqrt(dx * dx + dy * dy)
+    let angle = Math.atan2(dy, dx) - player.angle
+
+    if (dist < MAX_DEPTH && Math.abs(angle) < FOV / 2) {
+      let screenX = (angle + FOV / 2) / FOV * WIDTH
+      let height = HEIGHT / dist
+      let y = HEIGHT / 2 - height / 2
+
+      ctx.fillStyle = "red"
+      ctx.fillRect(screenX - 20, y, 40, height)
+      ctx.fillStyle = "darkred"
+      ctx.fillRect(screenX - 15, y + 10, 10, 10)
+      ctx.fillRect(screenX + 5, y + 10, 10, 10)
+    }
+  })
+}
+
+function drawAmmo() {
+  ctx.fillStyle = "yellow"
+  ctx.font = "20px monospace"
+  ctx.fillText("Ammo: " + ammo, WIDTH - 150, 30)
+}
+
 function drawPauseMenu() {
   ctx.fillStyle = "rgba(0,0,0,0.9)"
   ctx.fillRect(0, 0, WIDTH, HEIGHT)
-
-  ctx.fillStyle = "red"
-  ctx.font = "bold 50px monospace"
+  ctx.fillStyle = "white"
+  ctx.font = "bold 50px Arial"
   ctx.textAlign = "center"
   ctx.fillText("PAUSED", WIDTH / 2, 100)
-
-  ctx.font = "32px monospace"
   
   const pauseOptions = ["RESUME", "SETTINGS", "QUIT"]
-  
+  ctx.font = "30px Arial"
   pauseOptions.forEach((option, index) => {
     ctx.fillStyle = pausedMenuIndex === index ? "red" : "white"
     ctx.fillText((pausedMenuIndex === index ? "> " : "  ") + option, WIDTH / 2, 250 + index * 80)
@@ -414,103 +393,6 @@ function drawPauseMenu() {
   ctx.textAlign = "left"
 }
 
-function gameLoop() {
-  if (gameState === "playing") {
-    if (gameStartTime === 0) {
-      gameStartTime = Date.now()
-      score = 0
-      window.scoreSubmitted = false
-    }
-    gameDuration = Date.now() - gameStartTime
-    let baseScore = enemiesKilled * 100 + Math.floor(gameDuration / 1000) * 10
-    score = Math.floor(baseScore * currentDifficultySettings.scoreMultiplier)
-    
-    movePlayer()
-    drawBackground()
-    castRays()
-    drawEnemies()
-    drawAmmo()
-    updateEnemies()
-    drawGun()
-    drawHUD()
-    drawMiniMap()
-
-    if (gameOver) {
-      drawGameOver()
-    }
-  } else if (gameState === "paused") {
-    movePlayer()
-    drawBackground()
-    castRays()
-    drawEnemies()
-    drawAmmo()
-    updateEnemies()
-    drawGun()
-    drawHUD()
-    drawMiniMap()
-    drawPauseMenu()
-  } else if (gameState === "menu") {
-    drawMainMenu()
-  } else if (gameState === "gameMode") {
-    drawGameModeMenu()
-  } else if (gameState === "difficulty") {
-    drawDifficultyMenu()
-  } else if (gameState === "settings") {
-    drawSettingsMenu()
-  }
-
-  requestAnimationFrame(gameLoop)
-}
-
-// Controles do menu de pausa e seleção
-document.addEventListener("keydown", (e) => {
-  if (gameState === "paused") {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-      pausedMenuIndex = (pausedMenuIndex - 1 + 3) % 3
-    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-      pausedMenuIndex = (pausedMenuIndex + 1) % 3
-    } else if (e.key === "Enter") {
-      if (pausedMenuIndex === 0) {
-        gameState = "playing"
-      } else if (pausedMenuIndex === 1) {
-        gameState = "settings"
-      } else if (pausedMenuIndex === 2) {
-        window.location.href = "/menu"
-      }
-    }
-  } else if (gameState === "gameMode") {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-      gameModeMenuIndex = (gameModeMenuIndex - 1 + 3) % 3
-    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-      gameModeMenuIndex = (gameModeMenuIndex + 1) % 3
-    } else if (e.key === "Enter") {
-      const modes = ["singleplayer", "multiplayer", "custom"]
-      selectedGameMode = modes[gameModeMenuIndex]
-      gameState = "difficulty"
-      difficultyMenuIndex = 0
-    }
-  } else if (gameState === "difficulty") {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-      difficultyMenuIndex = (difficultyMenuIndex - 1 + 4) % 4
-    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-      difficultyMenuIndex = (difficultyMenuIndex + 1) % 4
-    } else if (e.key === "Enter") {
-      const difficulties = ["easy", "normal", "hard", "nightmare"]
-      selectedDifficulty = difficulties[difficultyMenuIndex]
-      currentDifficultySettings = difficultySettings[selectedDifficulty]
-      gameState = "playing"
-      gameStartTime = 0
-      score = 0
-      enemiesKilled = 0
-      lives = 3
-      ammo = 10
-      gameOver = false
-      window.scoreSubmitted = false
-    }
-  }
-})
-
-// Placeholder para funções do menu
 function drawMainMenu() {
   ctx.fillStyle = "rgba(20,20,40,0.95)"
   ctx.fillRect(0, 0, WIDTH, HEIGHT)
@@ -585,13 +467,6 @@ function drawSettingsMenu() {
   ctx.textAlign = "left"
 }
 
-function initGame() {
-  const params = new URLSearchParams(window.location.search)
-  username = params.get("username") || localStorage.getItem("username") || "Player"
-  gameState = "menu"
-  gameLoop()
-}
-
 function castRays() {
   for (let i = 0; i < RAYS; i++) {
     let angle = player.angle - FOV / 2 + (i / RAYS) * FOV
@@ -617,6 +492,112 @@ function castRays() {
     ctx.fillStyle = `rgb(${color},${color},${color})`
     ctx.fillRect((i / RAYS) * WIDTH, HEIGHT / 2 - height / 2, WIDTH / RAYS, height)
   }
+}
+
+function gameLoop() {
+  if (gameState === "playing") {
+    if (gameStartTime === 0) {
+      gameStartTime = Date.now()
+      score = 0
+      window.scoreSubmitted = false
+      spawnEnemies()
+    }
+    gameDuration = Date.now() - gameStartTime
+    let baseScore = enemiesKilled * 100 + Math.floor(gameDuration / 1000) * 10
+    score = Math.floor(baseScore * currentDifficultySettings.scoreMultiplier)
+    
+    movePlayer()
+    drawBackground()
+    castRays()
+    drawEnemies()
+    drawAmmo()
+    updateEnemies()
+    drawGun()
+    drawHUD()
+    drawMiniMap()
+    checkPhaseCompletion()
+
+    if (gameOver) {
+      drawGameOver()
+    }
+  } else if (gameState === "paused") {
+    movePlayer()
+    drawBackground()
+    castRays()
+    drawEnemies()
+    drawAmmo()
+    updateEnemies()
+    drawGun()
+    drawHUD()
+    drawMiniMap()
+    drawPauseMenu()
+  } else if (gameState === "menu") {
+    drawMainMenu()
+  } else if (gameState === "gameMode") {
+    drawGameModeMenu()
+  } else if (gameState === "difficulty") {
+    drawDifficultyMenu()
+  } else if (gameState === "settings") {
+    drawSettingsMenu()
+  }
+
+  requestAnimationFrame(gameLoop)
+}
+
+document.addEventListener("keydown", (e) => {
+  if (gameState === "paused") {
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+      pausedMenuIndex = (pausedMenuIndex - 1 + 3) % 3
+    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+      pausedMenuIndex = (pausedMenuIndex + 1) % 3
+    } else if (e.key === "Enter") {
+      if (pausedMenuIndex === 0) {
+        gameState = "playing"
+      } else if (pausedMenuIndex === 1) {
+        gameState = "settings"
+      } else if (pausedMenuIndex === 2) {
+        window.location.href = "/menu"
+      }
+    }
+  } else if (gameState === "gameMode") {
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+      gameModeMenuIndex = (gameModeMenuIndex - 1 + 3) % 3
+    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+      gameModeMenuIndex = (gameModeMenuIndex + 1) % 3
+    } else if (e.key === "Enter") {
+      const modes = ["singleplayer", "multiplayer", "custom"]
+      selectedGameMode = modes[gameModeMenuIndex]
+      gameState = "difficulty"
+      difficultyMenuIndex = 0
+    }
+  } else if (gameState === "difficulty") {
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+      difficultyMenuIndex = (difficultyMenuIndex - 1 + 4) % 4
+    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+      difficultyMenuIndex = (difficultyMenuIndex + 1) % 4
+    } else if (e.key === "Enter") {
+      const difficulties = ["easy", "normal", "hard", "nightmare"]
+      selectedDifficulty = difficulties[difficultyMenuIndex]
+      currentDifficultySettings = difficultySettings[selectedDifficulty]
+      gameState = "playing"
+      gameStartTime = 0
+      score = 0
+      enemiesKilled = 0
+      phaseEnemiesKilled = 0
+      currentPhase = 1
+      lives = 3
+      ammo = 10
+      gameOver = false
+      window.scoreSubmitted = false
+    }
+  }
+})
+
+function initGame() {
+  const params = new URLSearchParams(window.location.search)
+  username = params.get("username") || localStorage.getItem("username") || "Player"
+  gameState = "menu"
+  gameLoop()
 }
 
 initGame()
