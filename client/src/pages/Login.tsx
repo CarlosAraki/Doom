@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Lock, Gamepad2 } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      setLocation("/game");
+      setLocation("/menu");
     }
   }, [isAuthenticated, setLocation]);
 
@@ -61,68 +61,63 @@ export default function Login() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-        <div className="text-white">Carregando...</div>
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="text-red-600 font-bold text-2xl" style={{ fontFamily: "monospace" }}>
+          LOADING...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          background: "linear-gradient(-45deg, #1f2937, #374151, #4b5563, #1f2937)",
-          backgroundSize: "400% 400%",
-          animation: "gradient 15s ease infinite",
-        }}
-      />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-black relative overflow-hidden">
+      {/* Scanline effect background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "repeating-linear-gradient(0deg, rgba(255,0,0,0.03) 0px, rgba(255,0,0,0.03) 1px, transparent 1px, transparent 2px)",
+            animation: "flicker 0.15s infinite"
+          }}
+        />
+      </div>
 
-      <div className="absolute top-20 left-10 w-72 h-72 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
-      <div className="absolute -bottom-8 right-10 w-72 h-72 bg-gray-700 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
-      <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse z-0" />
+      {/* CRT border effect */}
+      <div className="absolute inset-0 border-4 border-red-900/50 pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-md">
-        <div
-          className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl fade-in-up"
-          style={{
-            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
-          }}
-        >
-          <div className="flex flex-col items-center mb-8">
-            <div className="mb-4 p-4 bg-gradient-to-br from-gray-500 to-gray-700 rounded-2xl shadow-lg">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-            <h1
-              className="text-3xl font-bold text-white text-center"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
-              {isRegistering ? "Criar Conta" : "Bem-vindo"}
+        <div className="border-4 border-red-600 bg-black p-8 shadow-2xl" style={{ boxShadow: "0 0 20px rgba(220, 20, 60, 0.5)" }}>
+          {/* Header */}
+          <div className="text-center mb-8 border-b-2 border-red-600 pb-4">
+            <h1 className="text-4xl font-bold text-red-600 mb-2" style={{ fontFamily: "monospace", textShadow: "0 0 10px rgba(220, 20, 60, 0.8)" }}>
+              DOOM
             </h1>
-            <p className="text-gray-300 text-center mt-2 text-sm">
-              {isRegistering ? "Crie sua conta para acessar o jogo" : "Acesse sua conta de forma segura"}
+            <p className="text-red-500 text-sm" style={{ fontFamily: "monospace" }}>
+              {isRegistering ? "NEW ACCOUNT" : "LOGIN TERMINAL"}
             </p>
           </div>
 
+          {/* Form */}
           <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-200 font-medium">
-                Email
+              <Label htmlFor="email" className="text-red-500 font-bold" style={{ fontFamily: "monospace" }}>
+                &gt; EMAIL
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="seu@email.com"
+                placeholder="player@doom.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:bg-white/15 focus:border-white/30 transition-all duration-200"
+                className="bg-black border-2 border-red-600 text-red-500 placeholder:text-red-900 focus:border-red-400 focus:shadow-lg focus:shadow-red-600/50"
+                style={{ fontFamily: "monospace" }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-200 font-medium">
-                Senha
+              <Label htmlFor="password" className="text-red-500 font-bold" style={{ fontFamily: "monospace" }}>
+                &gt; PASSWORD
               </Label>
               <div className="relative">
                 <Input
@@ -132,64 +127,40 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:bg-white/15 focus:border-white/30 transition-all duration-200 pr-10"
+                  className="bg-black border-2 border-red-600 text-red-500 placeholder:text-red-900 focus:border-red-400 focus:shadow-lg focus:shadow-red-600/50 pr-10"
+                  style={{ fontFamily: "monospace" }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-400"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
-            {!isRegistering && (
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-white/20 bg-white/10 accent-blue-500 cursor-pointer"
-                  />
-                  <span className="text-gray-300 group-hover:text-gray-200 transition-colors">
-                    Lembrar-me
-                  </span>
-                </label>
-                <a
-                  href="#"
-                  className="text-blue-300 hover:text-blue-200 transition-colors font-medium"
-                >
-                  Esqueceu a senha?
-                </a>
-              </div>
-            )}
-
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              className="w-full bg-red-600 hover:bg-red-700 text-black font-bold py-2 border-2 border-red-600 uppercase"
+              style={{ fontFamily: "monospace" }}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{isRegistering ? "Criando conta..." : "Entrando..."}</span>
+                  <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  <span>{isRegistering ? "CREATING..." : "CONNECTING..."}</span>
                 </span>
               ) : (
-                isRegistering ? "Criar Conta" : "Entrar"
+                isRegistering ? "CREATE ACCOUNT" : "ENTER GAME"
               )}
             </Button>
           </form>
 
           <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/20" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white/5 text-gray-400">Ou</span>
+            <div className="border-t-2 border-red-600" />
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+              <span className="px-2 bg-black text-red-600 text-xs" style={{ fontFamily: "monospace" }}>OR</span>
             </div>
           </div>
 
@@ -197,60 +168,58 @@ export default function Login() {
             <Button
               type="button"
               onClick={handleOAuthLogin}
-              variant="outline"
-              className="border-white/20 bg-white/5 text-gray-200 hover:bg-white/10 transition-all"
+              className="bg-black border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-black font-bold uppercase"
+              style={{ fontFamily: "monospace" }}
             >
               Google
             </Button>
             <Button
               type="button"
               onClick={handleOAuthLogin}
-              variant="outline"
-              className="border-white/20 bg-white/5 text-gray-200 hover:bg-white/10 transition-all"
+              className="bg-black border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-black font-bold uppercase"
+              style={{ fontFamily: "monospace" }}
             >
               GitHub
             </Button>
           </div>
 
-          <p className="text-center text-gray-300 text-sm mt-6">
+          <p className="text-center text-red-600 text-sm mt-6" style={{ fontFamily: "monospace" }}>
             {isRegistering ? (
               <>
-                Já tem uma conta?{" "}
+                HAVE ACCOUNT?{" "}
                 <button
                   onClick={() => setIsRegistering(false)}
-                  className="text-blue-300 hover:text-blue-200 font-semibold transition-colors"
+                  className="text-red-400 hover:text-red-300 font-bold underline"
                 >
-                  Faça login
+                  LOGIN
                 </button>
               </>
             ) : (
               <>
-                Não tem uma conta?{" "}
+                NO ACCOUNT?{" "}
                 <button
                   onClick={() => setIsRegistering(true)}
-                  className="text-blue-300 hover:text-blue-200 font-semibold transition-colors"
+                  className="text-red-400 hover:text-red-300 font-bold underline"
                 >
-                  Cadastre-se
+                  REGISTER
                 </button>
               </>
             )}
           </p>
         </div>
 
-        <div className="hidden lg:flex justify-center mt-8 opacity-80">
-          <img
-            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663185495106/CSegGTqXw5sLXf3QBNQyjF/login-illustration-RRmLs7EkU47uqxRKeQPrG4.webp"
-            alt="Secure login illustration"
-            className="w-64 h-64 object-contain drop-shadow-2xl"
-          />
+        {/* Footer text */}
+        <div className="text-center mt-8 text-red-900 text-xs" style={{ fontFamily: "monospace" }}>
+          <p>UAC SECURITY TERMINAL</p>
+          <p>AUTHORIZED ACCESS ONLY</p>
         </div>
       </div>
 
       <style>{`
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        @keyframes flicker {
+          0% { opacity: 0.97; }
+          50% { opacity: 1; }
+          100% { opacity: 0.97; }
         }
       `}</style>
     </div>
