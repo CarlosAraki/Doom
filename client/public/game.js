@@ -32,11 +32,24 @@ let gameSettings = {
 }
 
 // Estado do jogo
-let gameState = "menu" // menu, gameMode, playing, gameover, paused, settings
+let gameState = "menu" // menu, gameMode, playing, gameover, paused, settings, difficulty
 let username = ""
 let selectedGameMode = "singleplayer"
+let selectedDifficulty = "normal" // easy, normal, hard, nightmare
+let gameModeMenuIndex = 0
+let difficultyMenuIndex = 0
 window.scoreSubmitted = false
 let pausedMenuIndex = 0
+
+// Configurações de dificuldade
+const difficultySettings = {
+  easy: { enemySpeedMultiplier: 0.5, scoreMultiplier: 0.5, name: "EASY" },
+  normal: { enemySpeedMultiplier: 1.0, scoreMultiplier: 1.0, name: "NORMAL" },
+  hard: { enemySpeedMultiplier: 1.5, scoreMultiplier: 1.5, name: "HARD" },
+  nightmare: { enemySpeedMultiplier: 2.0, scoreMultiplier: 2.0, name: "NIGHTMARE" }
+}
+
+let currentDifficultySettings = difficultySettings.normal
 
 const enemySprite = new Image()
 enemySprite.src = "mike.jpg"
@@ -165,8 +178,9 @@ function updateEnemies() {
     let dist = Math.sqrt(dx * dx + dy * dy)
 
     if (dist > 0.2) {
-      let stepX = dx / dist * ENEMY_SPEED
-      let stepY = dy / dist * ENEMY_SPEED
+      let adjustedEnemySpeed = ENEMY_SPEED * currentDifficultySettings.enemySpeedMultiplier
+      let stepX = dx / dist * adjustedEnemySpeed
+      let stepY = dy / dist * adjustedEnemySpeed
       let nx = e.x + stepX
       let ny = e.y + stepY
 
@@ -282,7 +296,15 @@ function drawHUD() {
   ctx.font = "20px monospace"
   ctx.fillText("Ammo: " + ammo, 20, 30)
   ctx.fillText("Lives: " + lives, 20, 60)
+  ctx.fillText("Difficulty: " + currentDifficultySettings.name, 20, 90)
   ctx.fillText("+", WIDTH / 2 - 5, HEIGHT / 2 + 5)
+  
+  // Score display
+  ctx.font = "24px monospace"
+  ctx.fillStyle = "yellow"
+  ctx.textAlign = "right"
+  ctx.fillText("Score: " + score, WIDTH - 20, 30)
+  ctx.textAlign = "left"
   
   ctx.font = "24px Arial"
   ctx.fillStyle = "white"
@@ -400,7 +422,8 @@ function gameLoop() {
       window.scoreSubmitted = false
     }
     gameDuration = Date.now() - gameStartTime
-    score = enemiesKilled * 100 + Math.floor(gameDuration / 1000) * 10
+    let baseScore = enemiesKilled * 100 + Math.floor(gameDuration / 1000) * 10
+    score = Math.floor(baseScore * currentDifficultySettings.scoreMultiplier)
     
     movePlayer()
     drawBackground()
@@ -430,6 +453,8 @@ function gameLoop() {
     drawMainMenu()
   } else if (gameState === "gameMode") {
     drawGameModeMenu()
+  } else if (gameState === "difficulty") {
+    drawDifficultyMenu()
   } else if (gameState === "settings") {
     drawSettingsMenu()
   }
@@ -437,7 +462,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop)
 }
 
-// Controles do menu de pausa
+// Controles do menu de pausa e seleção
 document.addEventListener("keydown", (e) => {
   if (gameState === "paused") {
     if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
@@ -452,6 +477,35 @@ document.addEventListener("keydown", (e) => {
       } else if (pausedMenuIndex === 2) {
         window.location.href = "/menu"
       }
+    }
+  } else if (gameState === "gameMode") {
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+      gameModeMenuIndex = (gameModeMenuIndex - 1 + 3) % 3
+    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+      gameModeMenuIndex = (gameModeMenuIndex + 1) % 3
+    } else if (e.key === "Enter") {
+      const modes = ["singleplayer", "multiplayer", "custom"]
+      selectedGameMode = modes[gameModeMenuIndex]
+      gameState = "difficulty"
+      difficultyMenuIndex = 0
+    }
+  } else if (gameState === "difficulty") {
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+      difficultyMenuIndex = (difficultyMenuIndex - 1 + 4) % 4
+    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+      difficultyMenuIndex = (difficultyMenuIndex + 1) % 4
+    } else if (e.key === "Enter") {
+      const difficulties = ["easy", "normal", "hard", "nightmare"]
+      selectedDifficulty = difficulties[difficultyMenuIndex]
+      currentDifficultySettings = difficultySettings[selectedDifficulty]
+      gameState = "playing"
+      gameStartTime = 0
+      score = 0
+      enemiesKilled = 0
+      lives = 3
+      ammo = 10
+      gameOver = false
+      window.scoreSubmitted = false
     }
   }
 })
@@ -472,10 +526,48 @@ function drawMainMenu() {
 function drawGameModeMenu() {
   ctx.fillStyle = "rgba(0,0,0,0.9)"
   ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  ctx.fillStyle = "white"
+  ctx.fillStyle = "red"
   ctx.font = "bold 50px Arial"
   ctx.textAlign = "center"
   ctx.fillText("SELECT GAME MODE", WIDTH / 2, 100)
+  
+  const modes = ["SINGLE PLAYER", "MULTIPLAYER", "CUSTOM GAME"]
+  ctx.font = "30px Arial"
+  ctx.fillStyle = "white"
+  
+  modes.forEach((mode, index) => {
+    ctx.fillStyle = gameModeMenuIndex === index ? "red" : "white"
+    ctx.fillText((gameModeMenuIndex === index ? "> " : "  ") + mode, WIDTH / 2 - 150, 250 + index * 60)
+  })
+  
+  ctx.fillStyle = "gray"
+  ctx.font = "16px Arial"
+  ctx.textAlign = "center"
+  ctx.fillText("Press UP/DOWN or W/S to navigate, ENTER to select", WIDTH / 2, HEIGHT - 50)
+  ctx.textAlign = "left"
+}
+
+function drawDifficultyMenu() {
+  ctx.fillStyle = "rgba(0,0,0,0.9)"
+  ctx.fillRect(0, 0, WIDTH, HEIGHT)
+  ctx.fillStyle = "red"
+  ctx.font = "bold 50px Arial"
+  ctx.textAlign = "center"
+  ctx.fillText("SELECT DIFFICULTY", WIDTH / 2, 100)
+  
+  const difficulties = Object.keys(difficultySettings).map(key => difficultySettings[key].name)
+  ctx.font = "30px Arial"
+  ctx.fillStyle = "white"
+  
+  difficulties.forEach((diff, index) => {
+    ctx.fillStyle = difficultyMenuIndex === index ? "red" : "white"
+    ctx.fillText((difficultyMenuIndex === index ? "> " : "  ") + diff, WIDTH / 2 - 150, 250 + index * 60)
+  })
+  
+  ctx.fillStyle = "gray"
+  ctx.font = "16px Arial"
+  ctx.textAlign = "center"
+  ctx.fillText("Press UP/DOWN or W/S to navigate, ENTER to select", WIDTH / 2, HEIGHT - 50)
   ctx.textAlign = "left"
 }
 
