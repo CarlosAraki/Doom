@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -9,9 +10,10 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _client: ReturnType<typeof postgres> | null = null;
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  const dbUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || ENV.databaseUrl;
+  if (!_db && dbUrl) {
     try {
-      _client = postgres(process.env.DATABASE_URL);
+      _client = postgres(dbUrl);
       _db = drizzle(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
