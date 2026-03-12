@@ -771,7 +771,14 @@ document.addEventListener("keydown", (e) => {
 function initGame() {
   const params = new URLSearchParams(window.location.search)
   username = params.get("username") || localStorage.getItem("username") || "Player"
-  gameState = "menu"
+  
+  // Se o usuário veio do login (tem username), pula o menu e vai direto para a seleção de modo/jogo
+  if (username && username !== "Player") {
+    gameState = "gameMode"
+  } else {
+    gameState = "menu"
+  }
+  
   gameLoop()
 }
 initGame()
