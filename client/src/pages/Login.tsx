@@ -19,7 +19,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      setLocation("/game");
+      setLocation("/menu");
     }
   }, [isAuthenticated, setLocation]);
 

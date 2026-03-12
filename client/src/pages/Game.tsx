@@ -79,7 +79,7 @@ export default function Game() {
 
       <div className="absolute top-4 left-4 z-50 flex gap-2">
         <Button
-          onClick={() => setLocation("/")}
+          onClick={() => setLocation("/menu")}
           variant="outline"
           className="bg-gray-900/80 border-gray-700 text-gray-200 hover:bg-gray-800 hover:text-white backdrop-blur-sm"
         >

@@ -34,7 +34,7 @@ let phaseEnemiesKilled = 0
 
 // Configurações do jogo
 let gameSettings = {
-  mouseSensitivity: 0.002,
+  mouseSensitivity: parseFloat(localStorage.getItem("mouseSensitivity")) || 0.002,
   volume: 0.5,
   difficulty: 1
 }
@@ -711,8 +711,10 @@ document.addEventListener("keydown", (e) => {
   } else if (gameState === "settings" && gameStartTime === 0) {
     if (e.key === "[") {
       gameSettings.mouseSensitivity = Math.max(0.0001, gameSettings.mouseSensitivity - 0.0005)
+      localStorage.setItem("mouseSensitivity", gameSettings.mouseSensitivity.toString())
     } else if (e.key === "]") {
       gameSettings.mouseSensitivity += 0.0005
+      localStorage.setItem("mouseSensitivity", gameSettings.mouseSensitivity.toString())
     } else if (e.key === "Escape") {
       gameState = "menu"
       mainMenuIndex = 0
@@ -772,12 +774,9 @@ function initGame() {
   const params = new URLSearchParams(window.location.search)
   username = params.get("username") || localStorage.getItem("username") || "Player"
   
-  // Se o usuário veio do login (tem username), pula o menu e vai direto para a seleção de modo/jogo
-  if (username && username !== "Player") {
-    gameState = "gameMode"
-  } else {
-    gameState = "menu"
-  }
+  // O fluxo agora é: Login -> Menu Principal (Home) -> New Game -> Modos -> Dificuldade
+  // Quando o jogador entra na página /game, ele começa no menu principal do jogo
+  gameState = "menu"
   
   gameLoop()
 }
