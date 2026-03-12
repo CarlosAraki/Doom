@@ -227,7 +227,11 @@ function checkPhaseCompletion() {
   }
 }
 
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false)
+document.addEventListener("keyup", e => {
+    if (e.key) {
+      keys[e.key.toLowerCase()] = false;
+    }
+  })
 
 canvas.addEventListener("click", () => canvas.requestPointerLock())
 
@@ -347,6 +351,13 @@ function drawGameOver() {
 
 async function saveScore() {
   try {
+    // Verificar se o usuário está logado antes de tentar salvar
+    const userResponse = await fetch('/api/trpc/auth.me', { credentials: 'include' });
+    if (userResponse.status === 401) {
+      console.warn('User not logged in, score will not be saved');
+      return;
+    }
+
     const response = await fetch('/api/trpc/scores.save', {
       method: 'POST',
       headers: {
@@ -678,7 +689,9 @@ function gameLoop() {
 }
 
 document.addEventListener("keydown", (e) => {
-  keys[e.key.toLowerCase()] = true
+  if (e.key) {
+    keys[e.key.toLowerCase()] = true
+  }
   
   if (gameState === "menu") {
     if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
