@@ -774,9 +774,15 @@ function initGame() {
   const params = new URLSearchParams(window.location.search)
   username = params.get("username") || localStorage.getItem("username") || "Player"
   
-  // O fluxo agora é: Login -> Menu Principal (Home) -> New Game -> Modos -> Dificuldade
-  // Quando o jogador entra na página /game, ele começa no menu principal do jogo
-  gameState = "menu"
+  // Captura as configurações passadas via URL ou localStorage
+  selectedGameMode = params.get("mode") || localStorage.getItem("selectedGameMode") || "singleplayer"
+  selectedDifficulty = params.get("difficulty") || localStorage.getItem("selectedDifficulty") || "normal"
+  currentDifficultySettings = difficultySettings[selectedDifficulty] || difficultySettings.normal
+  
+  // Inicia o jogo DIRETAMENTE no estado de jogo, sem menus internos
+  gameState = "playing"
+  gameStartTime = Date.now()
+  spawnEnemies()
   
   gameLoop()
 }
