@@ -11,6 +11,7 @@ let _client: ReturnType<typeof postgres> | null = null;
 
 export async function getDb() {
   const dbUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || ENV.databaseUrl;
+  console.log("[Database] Attempting connection with URL starting with:", dbUrl ? dbUrl.substring(0, 20) : "UNDEFINED");
   if (!_db && dbUrl) {
     try {
       _client = postgres(dbUrl);
