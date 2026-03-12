@@ -29,7 +29,7 @@ export const appRouter = router({
           }
           
           const cookieOptions = getSessionCookieOptions(ctx.req);
-          ctx.res.cookie(COOKIE_NAME, input.email, cookieOptions);
+          ctx.res.cookie(COOKIE_NAME, JSON.stringify({ email: input.email }), cookieOptions);
           
           return {
             success: true,

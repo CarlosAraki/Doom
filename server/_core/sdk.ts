@@ -257,9 +257,35 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
+
+    // Try local email/password authentication first
+    if (sessionCookie) {
+      try {
+        const localData = JSON.parse(sessionCookie);
+        if (localData && localData.email) {
+          const user = await db.getUserByEmail(localData.email);
+          if (user) {
+            // Adapt localAuth user to the expected User type if necessary
+            return {
+              id: user.id,
+              openId: `local:${user.email}`,
+              email: user.email,
+              name: user.email.split('@')[0],
+              role: 'user',
+              createdAt: user.createdAt,
+              updatedAt: user.updatedAt,
+              lastSignedIn: new Date(),
+              loginMethod: 'email'
+            } as User;
+          }
+        }
+      } catch (e) {
+        // Not a JSON cookie, proceed to standard OAuth verification
+      }
+    }
+
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
