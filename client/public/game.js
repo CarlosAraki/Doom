@@ -40,16 +40,11 @@ let gameSettings = {
 }
 
 // Estado do jogo
-let gameState = "menu"
+let gameState = "playing" // Inicia direto no jogo
 let username = ""
 let selectedGameMode = "singleplayer"
 let selectedDifficulty = "normal"
-let gameModeMenuIndex = 0
-let difficultyMenuIndex = 0
-let mainMenuIndex = 0
 window.scoreSubmitted = false
-let pausedMenuIndex = 0
-let settingsMenuIndex = 0
 
 // Configurações de dificuldade
 const difficultySettings = {
@@ -64,7 +59,7 @@ let currentDifficultySettings = difficultySettings.normal
 const enemySprite = new Image()
 enemySprite.src = "mike.jpg"
 
-// Gerar mapa 3x maior (84x54)
+// Gerar mapa
 function generateMap() {
   const width = 84
   const height = 54
@@ -351,7 +346,6 @@ function drawGameOver() {
 
 async function saveScore() {
   try {
-    // Verificar se o usuário está logado antes de tentar salvar
     const userResponse = await fetch('/api/trpc/auth.me', { credentials: 'include' });
     if (userResponse.status === 401) {
       console.warn('User not logged in, score will not be saved');
@@ -394,26 +388,20 @@ function drawMiniMap() {
   let scale = 3
   let mapWidth = map[0].length * scale
   let mapHeight = map.length * scale
-  let mapX = WIDTH - mapWidth - 10
-  let mapY = 10
-
+  ctx.fillStyle = "rgba(0,0,0,0.5)"
+  ctx.fillRect(WIDTH - mapWidth - 10, 10, mapWidth, mapHeight)
+  
   for (let y = 0; y < map.length; y++) {
-    for (let x = 0; x < map[0].length; x++) {
-      if (map[y][x] === 1) ctx.fillStyle = "white"
-      else ctx.fillStyle = "black"
-      ctx.fillRect(mapX + x * scale, mapY + y * scale, scale, scale)
+    for (let x = 0; x < map[y].length; x++) {
+      if (map[y][x] === 1) {
+        ctx.fillStyle = "white"
+        ctx.fillRect(WIDTH - mapWidth - 10 + x * scale, 10 + y * scale, scale, scale)
+      }
     }
   }
-
-  ctx.fillStyle = "yellow"
-  ctx.fillRect(mapX + player.x * scale - 2, mapY + player.y * scale - 2, 4, 4)
-
-  enemies.forEach(e => {
-    if (e.alive) {
-      ctx.fillStyle = "red"
-      ctx.fillRect(mapX + e.x * scale - 2, mapY + e.y * scale - 2, 4, 4)
-    }
-  })
+  
+  ctx.fillStyle = "red"
+  ctx.fillRect(WIDTH - mapWidth - 10 + player.x * scale - 1, 10 + player.y * scale - 1, 3, 3)
 }
 
 function drawEnemies() {
@@ -423,153 +411,21 @@ function drawEnemies() {
     let dy = e.y - player.y
     let dist = Math.sqrt(dx * dx + dy * dy)
     let angle = Math.atan2(dy, dx) - player.angle
-
-    if (dist < MAX_DEPTH && Math.abs(angle) < FOV / 2) {
-      let screenX = (angle + FOV / 2) / FOV * WIDTH
+    
+    while (angle < -Math.PI) angle += Math.PI * 2
+    while (angle > Math.PI) angle -= Math.PI * 2
+    
+    if (Math.abs(angle) < FOV) {
+      let screenX = (angle / FOV + 0.5) * WIDTH
       let height = HEIGHT / dist
-      let y = HEIGHT / 2 - height / 2
-      let width = 40
-      let eyeSize = 10
-
       ctx.fillStyle = e.typeData.color
-      ctx.fillRect(screenX - width / 2, y, width, height)
-      
-      if (e.type === "tank") {
-        ctx.fillStyle = "#8B0000"
-        ctx.fillRect(screenX - width / 2, y, width, height * 0.3)
-      } else if (e.type === "ranged") {
-        ctx.fillStyle = "#FF1493"
-        ctx.fillRect(screenX - width / 2 + 5, y + height * 0.2, 5, height * 0.6)
-        ctx.fillRect(screenX + width / 2 - 10, y + height * 0.2, 5, height * 0.6)
-      }
-      
-      ctx.fillStyle = "darkred"
-      ctx.fillRect(screenX - eyeSize / 2 - 5, y + 10, eyeSize, eyeSize)
-      ctx.fillRect(screenX + eyeSize / 2 + 5, y + 10, eyeSize, eyeSize)
+      ctx.fillRect(screenX - height / 4, HEIGHT / 2 - height / 2, height / 2, height)
     }
   })
 }
 
 function drawAmmo() {
-  ctx.fillStyle = "yellow"
-  ctx.font = "20px monospace"
-  ctx.fillText("Ammo: " + ammo, WIDTH - 150, 30)
-}
-
-function drawPauseMenu() {
-  ctx.fillStyle = "rgba(0,0,0,0.9)"
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  ctx.fillStyle = "white"
-  ctx.font = "bold 50px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("PAUSED", WIDTH / 2, 100)
-  
-  const pauseOptions = ["RESUME", "SETTINGS", "QUIT"]
-  ctx.font = "30px Arial"
-  pauseOptions.forEach((option, index) => {
-    ctx.fillStyle = pausedMenuIndex === index ? "red" : "white"
-    ctx.fillText((pausedMenuIndex === index ? "> " : "  ") + option, WIDTH / 2, 250 + index * 80)
-  })
-
-  ctx.fillStyle = "white"
-  ctx.font = "16px monospace"
-  ctx.fillText("USE ARROW KEYS OR WASD TO NAVIGATE", WIDTH / 2, HEIGHT - 100)
-  ctx.fillText("PRESS ENTER TO SELECT", WIDTH / 2, HEIGHT - 60)
-  ctx.textAlign = "left"
-}
-
-function drawMainMenu() {
-  ctx.fillStyle = "rgba(20,20,40,0.95)"
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  ctx.fillStyle = "red"
-  ctx.font = "bold 60px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("DOOM", WIDTH / 2, 100)
-  ctx.font = "32px Arial"
-  ctx.fillStyle = "white"
-  ctx.fillText("Bem-vindo, " + username, WIDTH / 2, 180)
-  
-  const mainMenuOptions = ["NEW GAME", "SETTINGS", "LOGOUT"]
-  ctx.font = "30px Arial"
-  mainMenuOptions.forEach((option, index) => {
-    ctx.fillStyle = mainMenuIndex === index ? "red" : "white"
-    ctx.fillText((mainMenuIndex === index ? "> " : "  ") + option, WIDTH / 2 - 100, 300 + index * 70)
-  })
-  
-  ctx.fillStyle = "gray"
-  ctx.font = "16px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("Press UP/DOWN or W/S to navigate, ENTER to select", WIDTH / 2, HEIGHT - 50)
-  ctx.textAlign = "left"
-}
-
-function drawGameModeMenu() {
-  ctx.fillStyle = "rgba(0,0,0,0.9)"
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  ctx.fillStyle = "red"
-  ctx.font = "bold 50px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("SELECT GAME MODE", WIDTH / 2, 100)
-  
-  const modes = ["SINGLE PLAYER", "MULTIPLAYER", "CUSTOM GAME"]
-  ctx.font = "30px Arial"
-  ctx.fillStyle = "white"
-  
-  modes.forEach((mode, index) => {
-    ctx.fillStyle = gameModeMenuIndex === index ? "red" : "white"
-    ctx.fillText((gameModeMenuIndex === index ? "> " : "  ") + mode, WIDTH / 2 - 150, 250 + index * 60)
-  })
-  
-  ctx.fillStyle = "gray"
-  ctx.font = "16px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("Press UP/DOWN or W/S to navigate, ENTER to select", WIDTH / 2, HEIGHT - 50)
-  ctx.textAlign = "left"
-}
-
-function drawDifficultyMenu() {
-  ctx.fillStyle = "rgba(0,0,0,0.9)"
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  ctx.fillStyle = "red"
-  ctx.font = "bold 50px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("SELECT DIFFICULTY", WIDTH / 2, 100)
-  
-  const difficulties = Object.keys(difficultySettings).map(key => difficultySettings[key].name)
-  ctx.font = "30px Arial"
-  ctx.fillStyle = "white"
-  
-  difficulties.forEach((diff, index) => {
-    ctx.fillStyle = difficultyMenuIndex === index ? "red" : "white"
-    ctx.fillText((difficultyMenuIndex === index ? "> " : "  ") + diff, WIDTH / 2 - 150, 250 + index * 60)
-  })
-  
-  ctx.fillStyle = "gray"
-  ctx.font = "16px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("Press UP/DOWN or W/S to navigate, ENTER to select", WIDTH / 2, HEIGHT - 50)
-  ctx.textAlign = "left"
-}
-
-function drawSettingsMenu() {
-  ctx.fillStyle = "rgba(0,0,0,0.9)"
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  ctx.fillStyle = "red"
-  ctx.font = "bold 50px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("SETTINGS", WIDTH / 2, 100)
-  
-  ctx.fillStyle = "white"
-  ctx.font = "24px Arial"
-  ctx.textAlign = "left"
-  ctx.fillText("Mouse Sensitivity: " + gameSettings.mouseSensitivity.toFixed(3), 100, 200)
-  ctx.fillText("Use [ and ] to adjust", 100, 240)
-  
-  ctx.fillStyle = "gray"
-  ctx.font = "16px Arial"
-  ctx.textAlign = "center"
-  ctx.fillText("Press ESC to go back", WIDTH / 2, HEIGHT - 50)
-  ctx.textAlign = "left"
+  // Já está no HUD
 }
 
 function castRays() {
@@ -654,7 +510,6 @@ function gameLoop() {
     drawBackground()
     castRays()
     drawEnemies()
-    drawAmmo()
     updateEnemies()
     drawGun()
     drawHUD()
@@ -664,25 +519,6 @@ function gameLoop() {
     if (gameOver) {
       drawGameOver()
     }
-  } else if (gameState === "paused") {
-    movePlayer()
-    drawBackground()
-    castRays()
-    drawEnemies()
-    drawAmmo()
-    updateEnemies()
-    drawGun()
-    drawHUD()
-    drawMiniMap()
-    drawPauseMenu()
-  } else if (gameState === "menu") {
-    drawMainMenu()
-  } else if (gameState === "gameMode") {
-    drawGameModeMenu()
-  } else if (gameState === "difficulty") {
-    drawDifficultyMenu()
-  } else if (gameState === "settings") {
-    drawSettingsMenu()
   }
 
   requestAnimationFrame(gameLoop)
@@ -693,80 +529,9 @@ document.addEventListener("keydown", (e) => {
     keys[e.key.toLowerCase()] = true
   }
   
-  if (gameState === "menu") {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-      mainMenuIndex = (mainMenuIndex - 1 + 3) % 3
-    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-      mainMenuIndex = (mainMenuIndex + 1) % 3
-    } else if (e.key === "Enter") {
-      if (mainMenuIndex === 0) {
-        gameState = "gameMode"
-        gameModeMenuIndex = 0
-      } else if (mainMenuIndex === 1) {
-        gameState = "settings"
-      } else if (mainMenuIndex === 2) {
-        window.location.href = "/"
-      }
-    }
-  } else if (gameState === "settings" && gameStartTime === 0) {
-    if (e.key === "[") {
-      gameSettings.mouseSensitivity = Math.max(0.0001, gameSettings.mouseSensitivity - 0.0005)
-      localStorage.setItem("mouseSensitivity", gameSettings.mouseSensitivity.toString())
-    } else if (e.key === "]") {
-      gameSettings.mouseSensitivity += 0.0005
-      localStorage.setItem("mouseSensitivity", gameSettings.mouseSensitivity.toString())
-    } else if (e.key === "Escape") {
-      gameState = "menu"
-      mainMenuIndex = 0
-    }
-  } else if (gameState === "paused") {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-      pausedMenuIndex = (pausedMenuIndex - 1 + 3) % 3
-    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-      pausedMenuIndex = (pausedMenuIndex + 1) % 3
-    } else if (e.key === "Enter") {
-      if (pausedMenuIndex === 0) {
-        gameState = "playing"
-      } else if (pausedMenuIndex === 1) {
-        gameState = "settings"
-      } else if (pausedMenuIndex === 2) {
-        window.location.href = "/menu"
-      }
-    }
-  } else if (gameState === "gameMode") {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-      gameModeMenuIndex = (gameModeMenuIndex - 1 + 3) % 3
-    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-      gameModeMenuIndex = (gameModeMenuIndex + 1) % 3
-    } else if (e.key === "Enter") {
-      const modes = ["singleplayer", "multiplayer", "custom"]
-      selectedGameMode = modes[gameModeMenuIndex]
-      gameState = "difficulty"
-      difficultyMenuIndex = 0
-    }
-  } else if (gameState === "difficulty") {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-      difficultyMenuIndex = (difficultyMenuIndex - 1 + 4) % 4
-    } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-      difficultyMenuIndex = (difficultyMenuIndex + 1) % 4
-    } else if (e.key === "Enter") {
-      const difficulties = ["easy", "normal", "hard", "nightmare"]
-      selectedDifficulty = difficulties[difficultyMenuIndex]
-      currentDifficultySettings = difficultySettings[selectedDifficulty]
-      gameState = "playing"
-      gameStartTime = 0
-      score = 0
-      enemiesKilled = 0
-      phaseEnemiesKilled = 0
-      currentPhase = 1
-      lives = 3
-      ammo = 10
-      gameOver = false
-      window.scoreSubmitted = false
-    }
-  } else if (gameState === "playing" && e.key === "Escape") {
-    gameState = "paused"
-    pausedMenuIndex = 0
+  if (gameState === "playing" && e.key === "Escape") {
+    // No jogo, ESC volta para o menu principal do site
+    window.location.href = "/menu"
   }
 })
 
@@ -774,24 +539,16 @@ function initGame() {
   const params = new URLSearchParams(window.location.search)
   username = params.get("username") || localStorage.getItem("username") || "Player"
   
-  // Captura as configurações passadas via URL ou localStorage
   selectedGameMode = params.get("mode") || localStorage.getItem("selectedGameMode") || "singleplayer"
   selectedDifficulty = params.get("difficulty") || localStorage.getItem("selectedDifficulty") || "normal"
   currentDifficultySettings = difficultySettings[selectedDifficulty] || difficultySettings.normal
   
-  // Inicia o jogo DIRETAMENTE no estado de jogo, sem menus internos
   gameState = "playing"
   gameStartTime = Date.now()
-  
-  // Proteção contra valores nulos que causam tela preta
-  if (!currentDifficultySettings) {
-    currentDifficultySettings = difficultySettings.normal;
-    selectedDifficulty = "normal";
-  }
-  
   spawnEnemies()
   
   gameLoop()
 }
+
 initGame()
 })()
