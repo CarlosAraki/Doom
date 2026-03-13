@@ -39,8 +39,8 @@ let gameSettings = {
   difficulty: 1
 }
 
-// Estado do jogo
-let gameState = "playing" // Inicia direto no jogo
+// Estado do jogo - SEMPRE INICIA NO JOGO
+let gameState = "playing" 
 let username = ""
 let selectedGameMode = "singleplayer"
 let selectedDifficulty = "normal"
@@ -424,10 +424,6 @@ function drawEnemies() {
   })
 }
 
-function drawAmmo() {
-  // Já está no HUD
-}
-
 function castRays() {
   for (let i = 0; i < RAYS; i++) {
     let angle = player.angle - FOV / 2 + (i / RAYS) * FOV
@@ -543,6 +539,12 @@ function initGame() {
   selectedDifficulty = params.get("difficulty") || localStorage.getItem("selectedDifficulty") || "normal"
   currentDifficultySettings = difficultySettings[selectedDifficulty] || difficultySettings.normal
   
+  // PROTEÇÃO CONTRA VALORES NULOS
+  if (!currentDifficultySettings) {
+    currentDifficultySettings = difficultySettings.normal;
+    selectedDifficulty = "normal";
+  }
+
   gameState = "playing"
   gameStartTime = Date.now()
   spawnEnemies()
