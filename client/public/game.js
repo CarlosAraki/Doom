@@ -782,6 +782,13 @@ function initGame() {
   // Inicia o jogo DIRETAMENTE no estado de jogo, sem menus internos
   gameState = "playing"
   gameStartTime = Date.now()
+  
+  // Proteção contra valores nulos que causam tela preta
+  if (!currentDifficultySettings) {
+    currentDifficultySettings = difficultySettings.normal;
+    selectedDifficulty = "normal";
+  }
+  
   spawnEnemies()
   
   gameLoop()

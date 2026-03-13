@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import MainMenu from "./pages/MainMenu";
 import Game from "./pages/Game";
+import Settings from "./pages/Settings";
 
 function Router() {
   return (
@@ -15,6 +16,7 @@ function Router() {
       <Route path={"/"} component={Login} />
       <Route path={"/menu"} component={MainMenu} />
       <Route path={"/game"} component={Game} />
+      <Route path={"/settings"} component={Settings} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
