@@ -3,8 +3,8 @@
 ## Autenticação e Banco de Dados
 - [x] Configurar template tRPC + Manus Auth + Database
 - [x] Corrigir configuração do Drizzle para PostgreSQL
-- [ ] Resolver problema de conexão TLS com Neon
-- [ ] Criar tabelas no banco de dados (users, localAuth, gameScores)
+- [x] Resolver problema de conexão TLS com Neon (Confirmado via script de teste)
+- [x] Criar tabelas no banco de dados (users, localAuth, gameScores) (Confirmado via introspecção)
 - [ ] Testar registro de usuário com email/senha
 - [ ] Testar login com email/senha
 - [ ] Testar OAuth callback (Google/GitHub)

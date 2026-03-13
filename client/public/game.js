@@ -1,6 +1,5 @@
 (function() {
-  if (window.gameLoaded) return
-  window.gameLoaded = true
+  // window.gameLoaded check removed to allow re-initialization on route change
 
   let canvas = document.getElementById("gameCanvas")
   if (!canvas) return
