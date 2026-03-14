@@ -37,9 +37,9 @@
   }
 
   let gameState = "playing" 
-  let username = ""
-  let selectedGameMode = "singleplayer"
-  let selectedDifficulty = "normal"
+  let username = localStorage.getItem("username") || "Player"
+  let selectedGameMode = localStorage.getItem("selectedGameMode") || "singleplayer"
+  let selectedDifficulty = localStorage.getItem("selectedDifficulty") || "normal"
   window.scoreSubmitted = false
 
   const difficultySettings = {
@@ -279,10 +279,6 @@
     if (document.pointerLockElement === canvas && gameState === "playing") player.angle += e.movementX * gameSettings.mouseSensitivity
   })
 
-  const params = new URLSearchParams(window.location.search)
-  username = params.get("username") || localStorage.getItem("username") || "Player"
-  selectedGameMode = params.get("mode") || localStorage.getItem("selectedGameMode") || "singleplayer"
-  selectedDifficulty = params.get("difficulty") || localStorage.getItem("selectedDifficulty") || "normal"
   currentDifficultySettings = difficultySettings[selectedDifficulty] || difficultySettings.normal
   gameLoop()
 })()
