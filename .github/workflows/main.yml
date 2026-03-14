@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# Força o uso do Node.js 24 para evitar avisos de depreciação
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -15,8 +19,7 @@ jobs:
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: 10
+      # Removi a linha 'version: 10' para evitar o conflito com o package.json
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
