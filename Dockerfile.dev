@@ -1,0 +1,28 @@
+# =============================================================================
+# Dockerfile.dev - Ambiente de desenvolvimento isolado
+# Node.js LTS compatível com pnpm e stack do projeto
+# =============================================================================
+FROM node:20-alpine
+
+# Instalar pnpm globalmente (versão do packageManager)
+RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
+
+WORKDIR /app
+
+# Copiar manifestos de dependências
+COPY package.json pnpm-lock.yaml ./
+
+# Instalar dependências (inclui devDependencies para desenvolvimento)
+RUN pnpm install --frozen-lockfile
+
+# Copiar código-fonte (o bind mount em docker-compose sobrepõe em runtime)
+COPY . .
+
+# Porta padrão da aplicação (Express + Vite)
+ENV PORT=3000
+
+# Expor porta interna
+EXPOSE 3000
+
+# Rodar migrações e servidor (desenvolvedor só executa e codifica)
+CMD ["pnpm", "run", "dev:docker"]

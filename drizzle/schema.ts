@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, serial, text, varchar, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, serial, integer, text, varchar, timestamp } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
@@ -49,11 +49,11 @@ export type InsertLocalAuth = typeof localAuth.$inferInsert;
  */
 export const gameScores = pgTable("gameScores", {
   id: serial("id").primaryKey(),
-  userId: serial("userId").notNull(),
-  score: serial("score").notNull(),
+  userId: integer("userId").notNull(),
+  score: integer("score").notNull(),
   gameMode: varchar("gameMode", { length: 64 }).default("singleplayer").notNull(),
-  enemiesKilled: serial("enemiesKilled").default(0).notNull(),
-  timePlayedSeconds: serial("timePlayedSeconds").default(0).notNull(),
+  enemiesKilled: integer("enemiesKilled").default(0).notNull(),
+  timePlayedSeconds: integer("timePlayedSeconds").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

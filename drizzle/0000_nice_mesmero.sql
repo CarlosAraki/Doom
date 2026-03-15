@@ -1,11 +1,11 @@
 CREATE TYPE "public"."role" AS ENUM('user', 'admin');--> statement-breakpoint
 CREATE TABLE "gameScores" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"userId" serial NOT NULL,
-	"score" serial NOT NULL,
+	"userId" integer NOT NULL,
+	"score" integer NOT NULL,
 	"gameMode" varchar(64) DEFAULT 'singleplayer' NOT NULL,
-	"enemiesKilled" serial DEFAULT 0 NOT NULL,
-	"timePlayedSeconds" serial DEFAULT 0 NOT NULL,
+	"enemiesKilled" integer DEFAULT 0 NOT NULL,
+	"timePlayedSeconds" integer DEFAULT 0 NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

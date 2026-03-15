@@ -7,7 +7,7 @@ dist/
 build/
 *.dist
 
-# Environment variables
+# Environment variables (.env.dev é commitado para desenvolvimento Docker)
 .env
 .env.local
 .env.development.local

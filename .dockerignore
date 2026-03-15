@@ -1,0 +1,40 @@
+# Dependencies (instaladas dentro do container)
+node_modules
+.pnpm-store
+
+# Git
+.git
+.gitignore
+
+# Build outputs
+dist
+build
+*.dist
+
+# Environment (injetado via docker-compose)
+.env
+.env.*
+!.env.example
+
+# IDE e editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Logs e caches
+*.log
+.cache
+.parcel-cache
+.eslintcache
+
+# Testes e coverage
+coverage
+.nyc_output
+*.lcov
+
+# Manus / debug
+.manus-logs

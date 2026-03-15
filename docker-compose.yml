@@ -1,0 +1,44 @@
+# =============================================================================
+# Docker Compose - Ambiente de desenvolvimento local
+# Isolado do Neon DB para evitar conflitos com deploy automático (Manus)
+# Aplicação exposta obrigatoriamente na porta 9992
+# =============================================================================
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: doom-postgres
+    environment:
+      POSTGRES_USER: doom
+      POSTGRES_PASSWORD: doom_dev_password
+      POSTGRES_DB: doom_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - doom_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doom -d doom_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: doom-app
+    env_file:
+      - .env.dev
+    ports:
+      - "9992:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+volumes:
+  doom_postgres_data:
